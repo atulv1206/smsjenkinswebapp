@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     environment {
-        DOTNET_ROOT  = "C:\\Program Files\\dotnet"
-        PATH = "${env.DOTNET_ROOT}:${env.PATH}"
+        DOTNET_ROOT = "C:\\Program Files\\dotnet"
+        PATH = "${env.DOTNET_ROOT};${env.PATH}"
     }
 
     stages {
@@ -15,46 +15,40 @@ pipeline {
 
         stage('Build') {
             steps {
-                script {
-                    // Restoring dependencies
-                    //bat "cd ${DOTNET_CLI_HOME} && dotnet restore"
-                    bat "dotnet restore"
-
-                    // Building the application
-                    bat "dotnet build --configuration Release"
-                }
+                bat "dotnet restore"
+                bat "dotnet build --configuration Release"
             }
         }
 
         stage('Test') {
             steps {
-                script {
-                    // Running tests
-                    bat "dotnet test --no-restore --configuration Release"
-                }
+                bat "dotnet test --no-restore --configuration Release"
             }
         }
 
         stage('Publish') {
             steps {
-                script {
-                    // Publishing the application
-                    bat "dotnet publish --no-restore --configuration Release --output .\\publish"
-                }
+                // Clean up old publish folder to avoid conflicts
+                bat "rmdir /S /Q publish || echo publish folder does not exist"
+                // Publish to local folder
+                bat "dotnet publish --no-restore --configuration Release --output publish"
             }
         }
-        stage('deploy') {
+
+        stage('Deploy') {
             steps {
-                script {
-                    bat 'xcopy /E /Y /Q publish\\* \\\\DEEPIKA\\coreapp\\'
-                }
+                // Copy to network share (IIS folder)
+                bat 'xcopy /E /Y /Q publish\\* \\\\DEEPIKA\\coreapp\\'
             }
         }
     }
 
     post {
         success {
-            echo 'Build, test, and publish successful!'
+            echo '✅ Build, test, publish, and deploy succeeded!'
+        }
+        failure {
+            echo '❌ Build or deploy failed.'
         }
     }
 }
