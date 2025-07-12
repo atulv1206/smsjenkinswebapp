@@ -43,6 +43,13 @@ pipeline {
                 }
             }
         }
+        stage('deploy') {
+            steps {
+                script {
+                    bat 'xcopy /E /Y /Q publish\\* \\\\DEEPIKA\\coreapp\\'
+                }
+            }
+        }
     }
 
     post {
